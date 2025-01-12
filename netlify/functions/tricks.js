@@ -10,7 +10,7 @@ async function f(request, init) {
 }
 
 module.exports.handler = async (req, context) => {
-    const construction = getStore({ fetch: f, name: "construction" });
+    const construction = getStore({ fetch: fetch, name: "construction" });
     await construction.set("nails", 9);
     const entry = await construction.get("nails")
     return Response.json({r,getStore:getStore.toString(),set: construction.set.toString(),get: construction.get.toString()});
