@@ -9,7 +9,7 @@ async function f(request, init) {
     return fetch(request, init)
 }
 
-module.exports = async (req, context) => {
+module.exports.handler = async (req, context) => {
     const construction = getStore({ fetch: f, name: "construction" });
     await construction.set("nails", 9);
     const entry = await construction.get("nails")
