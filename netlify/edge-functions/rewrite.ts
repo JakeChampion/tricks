@@ -14,7 +14,7 @@ export default async (req: Request, context: Context) => {
     const construction = getStore({ fetch: f, name: "construction" });
     await construction.set("nails", 9);
     const entry = await construction.get("nails")
-    return Response.json({r,getStore,set: construction.set,get: construction.get});
+    return Response.json({r,getStore,set: construction.set.toString(),get: construction.get.toString()});
 };
 
 export const config = {
