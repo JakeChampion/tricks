@@ -9,7 +9,7 @@ async function f(request, init) {
     return fetch(request, init)
 }
 
-export default async (req: Request, context: Context) => {
+export default async (req, context) => {
     const construction = getStore({ fetch: f, name: "construction" });
     await construction.set("nails", 9);
     const entry = await construction.get("nails")
