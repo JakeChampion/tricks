@@ -249,7 +249,10 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 	//   req.Header.Add(METADATA_HEADER_EXTERNAL, encodedMetadata)
 	// }
 
+	fmt.Printf("req1: %+v\n", req)
+
 	res, err := http.DefaultTransport.RoundTrip(req)
+	fmt.Printf("res1: %+v\n", res)
 
 	if err != nil {
 		err := NewBlobsInternalError(res)
