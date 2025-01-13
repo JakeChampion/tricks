@@ -1,6 +1,5 @@
 {
   "name": "tricks",
-  "type": "module",
   "dependencies": {
     "@netlify/blobs": "*",
     "@netlify/functions": "*"

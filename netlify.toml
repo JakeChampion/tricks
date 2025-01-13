@@ -1,0 +1,12 @@
+plugins = []
+headers = []
+redirects = []
+
+[build]
+edge_functions = "./netlify/edge-functions"
+publish = "."
+publishOrigin = "default"
+functions = "./netlify/functions"
+
+[functions]
+  directory = "./netlify/functions/"
