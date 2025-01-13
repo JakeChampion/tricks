@@ -176,18 +176,14 @@ func validateStoreName(name string) error {
 }
 
 // NewStore creates a new store instance.
-func NewStore(storeName string) (*Store, error) {
+func NewStore(storeName string, client Client) (*Store, error) {
 	err := validateStoreName(storeName)
 	if err != nil {
 		return nil, err
 	}
 	return &Store{
-		Client: &Client{
-			SiteID:      "site123",
-			Token:       "token123",
-			Consistency: ConsistencyModeEventual,
-		},
-		Name: storeName,
+		Client: &client,
+		Name:   storeName,
 	}, nil
 }
 
@@ -385,7 +381,11 @@ func handler(ctx context.Context, request APIGatewayProxyRequest) (*events.APIGa
 	region := "auto"
 	println(deploy_id, api_url, site_id, region)
 
-	store, err := NewStore("construction")
+	store, err := NewStore("construction", Client{
+		SiteID:      site_id,
+		Token:       blobContext.Token,
+		Consistency: ConsistencyModeEventual,
+	})
 	if err != nil {
 		return nil, err
 	}
