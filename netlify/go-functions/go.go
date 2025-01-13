@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	b64 "encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -11,6 +12,16 @@ import (
 )
 
 // const DEFAULT_API_HOST = "api.netlify.com"
+
+type EnvironmentContext struct {
+	Api_URL           string `json:"apiURL,omitempty"`
+	Deploy_ID         string `json:"deployID,omitempty"`
+	Edge_URL          string `json:"edgeURL,omitempty"`
+	Primary_Region    string `json:"primaryRegion,omitempty"`
+	Site_ID           string `json:"siteID,omitempty"`
+	Token             string `json:"token,omitempty"`
+	Uncached_Edge_URL string `json:"uncachedEdgeURL,omitempty"`
+}
 
 type InvocationMetadata struct {
 	AccountTier      string `json:"accountTier,omitempty"`
@@ -88,6 +99,20 @@ func handler(ctx context.Context, request APIGatewayProxyRequest) (*events.APIGa
 	blob, _ := b64.StdEncoding.DecodeString(request.Blobs)
 
 	fmt.Println(blob)
+
+	if !json.Valid([]byte(blob)) {
+		// handle the error here
+		fmt.Println("invalid JSON string:", blob)
+		// return
+	}
+
+	var blobContext EnvironmentContext
+	err := json.Unmarshal([]byte(blob), &blobContext)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("blobContext: %+v\n", blobContext)
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: 200,
