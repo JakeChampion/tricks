@@ -14,13 +14,10 @@ import (
 // const DEFAULT_API_HOST = "api.netlify.com"
 
 type EnvironmentContext struct {
-	Api_URL           string `json:"apiURL,omitempty"`
-	Deploy_ID         string `json:"deployID,omitempty"`
-	Edge_URL          string `json:"edgeURL,omitempty"`
-	Primary_Region    string `json:"primaryRegion,omitempty"`
-	Site_ID           string `json:"siteID,omitempty"`
+	Edge_URL          string `json:"url,omitempty"`
+	Primary_Region    string `json:"primary_region,omitempty"`
 	Token             string `json:"token,omitempty"`
-	Uncached_Edge_URL string `json:"uncachedEdgeURL,omitempty"`
+	Uncached_Edge_URL string `json:"url_uncached,omitempty"`
 }
 
 type InvocationMetadata struct {
