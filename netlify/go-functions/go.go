@@ -88,12 +88,12 @@ func handler(ctx context.Context, request APIGatewayProxyRequest) (*events.APIGa
 	// api_url := "https://api.netlify.com"
 	// site_id := request.Headers["x-nf-site-id"]
 	// const payload = {
-		// apiURL: "https://api.netlify.com",
-		// deployID: reques,
-		// siteID: siteId,
-		// token,
+	// apiURL: "https://api.netlify.com",
+	// deployID: reques,
+	// siteID: siteId,
+	// token,
 	// }
-	const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64')
+	// const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64')
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: 200,
