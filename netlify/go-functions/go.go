@@ -242,8 +242,8 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 		log.Fatal(err)
 	}
 
-	req.Header.Add("authorization", authorization)
-	req.Header.Add("accept", SIGNED_URL_ACCEPT_HEADER)
+	req.Header.Add("Authorization", authorization)
+	req.Header.Add("Accept", SIGNED_URL_ACCEPT_HEADER)
 
 	// if (encodedMetadata) {
 	//   req.Header.Add(METADATA_HEADER_EXTERNAL, encodedMetadata)
