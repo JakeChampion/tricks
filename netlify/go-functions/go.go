@@ -98,13 +98,7 @@ func handler(ctx context.Context, request APIGatewayProxyRequest) (*events.APIGa
 
 	blob, _ := b64.StdEncoding.DecodeString(request.Blobs)
 
-	fmt.Println(blob)
-
-	if !json.Valid([]byte(blob)) {
-		// handle the error here
-		fmt.Println("invalid JSON string:", blob)
-		// return
-	}
+	fmt.Println(string(blob))
 
 	var blobContext EnvironmentContext
 	err := json.Unmarshal([]byte(blob), &blobContext)
