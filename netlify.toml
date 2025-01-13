@@ -3,7 +3,7 @@ edge_functions = "./netlify/edge-functions"
 publish = "."
 publishOrigin = "default"
 functions = "./netlify/functions"
-command = "make build"
+command = "make"
 
 [build.environment]
   GO_IMPORT_PATH = "github.com/jakechampion/tricks"
