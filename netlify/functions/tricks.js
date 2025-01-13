@@ -15,7 +15,3 @@ module.exports.handler = async (req, context) => {
     const entry = await construction.get("nails")
     return Response.json({r,getStore:getStore.toString(),set: construction.set.toString(),get: construction.get.toString()});
 };
-
-module.exports.config = {
-    path: '/f'
-};

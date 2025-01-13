@@ -1,7 +1,3 @@
-plugins = []
-headers = []
-redirects = []
-
 [build]
 edge_functions = "./netlify/edge-functions"
 publish = "."
@@ -10,3 +6,8 @@ functions = "./netlify/functions"
 
 [functions]
   directory = "./netlify/functions/"
+
+[[redirects]]
+  from = "/f/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
