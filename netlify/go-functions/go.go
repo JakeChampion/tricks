@@ -19,6 +19,10 @@ import (
 // Metadata type is a map representing arbitrary key-value pairs.
 type Metadata map[string]interface{}
 
+type SignedS3Response struct {
+	URL string `json:"url"`
+}
+
 // ListResponseBlob represents a blob's metadata from a list response.
 type ListResponseBlob struct {
 	ETag         string `json:"etag"`
@@ -270,6 +274,13 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 	}
 	fmt.Printf("WOOWOWOWOWO %s\n", string(body))
 
+	var signedS3Response SignedS3Response
+	err = json.Unmarshal(body, &signedS3Response)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// const { url: signedURL } = await res.json()
 
 	userHeaders := make(map[string]string)
@@ -278,7 +289,7 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 	// }
 	// const userHeaders = encodedMetadata ? { [METADATA_HEADER_INTERNAL]: encodedMetadata } : undefined
 
-	return userHeaders, url.String(), nil
+	return userHeaders, signedS3Response.URL, nil
 }
 
 // MakeRequest performs a request to the store.
