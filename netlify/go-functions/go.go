@@ -49,7 +49,7 @@ type APIGatewayProxyRequest struct {
 	Body                            string                 `json:"body"`
 	IsBase64                        bool                   `json:"isBase64Encoded"`
 	Route                           string                 `json:"route,omitempty"`
-	Blobs                           string                 `json:"blobs,omitempty"`
+	Blobs                           string                 `json:"blobs"`
 	Flags                           map[string]interface{} `json:"flags,omitempty"`
 	InvocationMetadata              InvocationMetadata     `json:"invocationMetadata,omitempty"`
 	LogIngestionToken               string                 `json:"logToken,omitempty"`
@@ -70,7 +70,6 @@ func handler(ctx context.Context, request APIGatewayProxyRequest) (*events.APIGa
 	for key, value := range cc.Env {
 		fmt.Printf("cc.Env.%s value is %v\n", key, value)
 	}
-	fmt.Println("cc.Env.NETLIFY_BLOBS_CONTEXT", cc.Env["NETLIFY_BLOBS_CONTEXT"])
 
 	for key, value := range cc.Custom {
 		fmt.Printf("cc.Custom.%s value is %v\n", key, value)
@@ -80,9 +79,10 @@ func handler(ctx context.Context, request APIGatewayProxyRequest) (*events.APIGa
 		fmt.Printf("request.Headers.%s value is %v\n", key, value)
 	}
 
-	fmt.Println(request)
-	fmt.Println("")
-	fmt.Println(lc)
+	fmt.Println("request.Blobs", request.Blobs)
+	fmt.Println("request.InvocationMetadata", request.InvocationMetadata)
+	fmt.Printf("request: %+v\n", request)
+	fmt.Printf("lc: %+v\n", lc)
 
 	// deploy_id := request.Headers["x-nf-deploy-id"]
 	// api_url := "https://api.netlify.com"
