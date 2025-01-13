@@ -153,14 +153,14 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 	// const encodedMetadata = encodeMetadata(metadata)
 	// Consistency := options.Consistency || c.Consistency
 
-	urlPath := fmt.Sprint("/%s", c.SiteID)
+	urlPath := fmt.Sprintf("/%s", c.SiteID)
 
 	if options.StoreName != "" {
-		urlPath += fmt.Sprint("/%s", options.StoreName)
+		urlPath += fmt.Sprintf("/%s", options.StoreName)
 	}
 
 	if options.Key != "" {
-		urlPath += fmt.Sprint("/%s", options.Key)
+		urlPath += fmt.Sprintf("/%s", options.Key)
 	}
 
 	// if (this.edgeURL) {
@@ -193,7 +193,7 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 	// }
 
 	apiHeaders := make(map[string]string)
-	authorization := fmt.Sprint("Bearer %s", c.Token)
+	authorization := fmt.Sprintf("Bearer %s", c.Token)
 	apiHeaders["authorization"] = authorization
 	u, err := url.Parse(fmt.Sprintf("/api/v1/blobs%s", urlPath))
 	if err != nil {
@@ -251,6 +251,11 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 
 	res, err := http.DefaultTransport.RoundTrip(req)
 
+	if err != nil {
+		err := NewBlobsInternalError(res)
+		return nil, "", err
+	}
+
 	if res.StatusCode != 200 {
 		err := NewBlobsInternalError(res)
 		return nil, "", err
@@ -260,7 +265,7 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("WOOWOWOWOWO %s", string(body))
+	fmt.Printf("WOOWOWOWOWO %s\n", string(body))
 
 	// const { url: signedURL } = await res.json()
 
