@@ -29,6 +29,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		fmt.Printf("cc.Custom.%s value is %v\n", key, value)
 	}
 
+	fmt.Println(request)
+
 	for key, value := range request.Headers {
 		fmt.Printf("request.Headers.%s value is %v\n", key, value)
 	}
