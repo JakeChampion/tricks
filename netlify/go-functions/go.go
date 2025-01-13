@@ -5,7 +5,10 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -36,7 +39,7 @@ type ListResponseBlob struct {
 // }
 
 // BlobInput represents a possible input for a Blob, which can be a string, ArrayBuffer, or a Blob.
-type BlobInput interface{}
+type BlobInput io.Reader
 
 // Fetcher type represents the Fetch function.
 type Fetcher func(url string, options *http.Request) (*http.Response, error)
@@ -101,6 +104,37 @@ type GetFinalRequestOptions struct {
 	StoreName   string            `json:"storeName,omitempty"`
 }
 
+// Define a custom error type BlobsInternalError
+type BlobsInternalError struct {
+	Message string
+}
+
+func (e *BlobsInternalError) Error() string {
+	return e.Message
+}
+
+// Constructor function to create a new BlobsInternalError
+func NewBlobsInternalError(res *http.Response) *BlobsInternalError {
+	// Get the "NF_ERROR" header or use the status code as a fallback
+	details := res.Header.Get("NF_ERROR")
+	if details == "" {
+		details = fmt.Sprintf("%d status code", res.StatusCode)
+	}
+
+	// If the "NF_REQUEST_ID" header is present, append it to the details
+	if requestID := res.Header.Get("NF_REQUEST_ID"); requestID != "" {
+		details += fmt.Sprintf(", ID: %s", requestID)
+	}
+
+	// Create the error message
+	message := fmt.Sprintf("Netlify Blobs has generated an internal error (%s)", details)
+
+	// Return a new BlobsInternalError
+	return &BlobsInternalError{
+		Message: message,
+	}
+}
+
 // Client represents the client to interact with the API.
 type Client struct {
 	APIURL          string
@@ -114,15 +148,167 @@ type Client struct {
 }
 
 // GetFinalRequest prepares the final request options.
-func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[int]interface{}, string, error) {
-	// Simulate building the final request
-	return nil, "", nil
+func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]string, string, error) {
+
+	// const encodedMetadata = encodeMetadata(metadata)
+	// Consistency := options.Consistency || c.Consistency
+
+	urlPath := fmt.Sprint("/%s", c.SiteID)
+
+	if options.StoreName != "" {
+		urlPath += fmt.Sprint("/%s", options.StoreName)
+	}
+
+	if options.Key != "" {
+		urlPath += fmt.Sprint("/%s", options.Key)
+	}
+
+	// if (this.edgeURL) {
+	//   if (consistency === 'strong' && !this.uncachedEdgeURL) {
+	//     throw new BlobsConsistencyError()
+	//   }
+
+	//   const headers: Record<string, string> = {
+	//     authorization: `Bearer ${this.token}`,
+	//   }
+
+	//   if (encodedMetadata) {
+	//     headers[METADATA_HEADER_INTERNAL] = encodedMetadata
+	//   }
+
+	//   if (this.region) {
+	//     urlPath = `/region:${this.region}${urlPath}`
+	//   }
+
+	//   const url = new URL(urlPath, consistency === 'strong' ? this.uncachedEdgeURL : this.edgeURL)
+
+	//   for (const key in parameters) {
+	//     url.searchParams.set(key, parameters[key])
+	//   }
+
+	//   return {
+	//     headers,
+	//     url: url.toString(),
+	//   }
+	// }
+
+	apiHeaders := make(map[string]string)
+	authorization := fmt.Sprint("Bearer %s", c.Token)
+	apiHeaders["authorization"] = authorization
+	u, err := url.Parse(fmt.Sprint("/api/v1/blobs%s", urlPath))
+	if err != nil {
+		log.Fatal(err)
+	}
+	var base *url.URL
+	base, err = url.Parse("https://api.netlify.com")
+	if c.APIURL != "" {
+		base, err = url.Parse((c.APIURL))
+	} else {
+		base, err = url.Parse("https://api.netlify.com")
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	url := base.ResolveReference(u)
+
+	q := url.Query()
+
+	for key, value := range options.Parameters {
+		q.Add(key, value)
+	}
+
+	if c.Region != "" {
+		q.Add("region", c.Region)
+	}
+
+	url.RawQuery = q.Encode()
+	// If there is no store name, we're listing stores. If there's no key,
+	// we're listing blobs. Both operations are implemented directly in the
+	// Netlify API.
+	if options.StoreName == "" || options.Key == "" {
+		return apiHeaders, url.String(), nil
+	}
+
+	// if (encodedMetadata) {
+	//   apiHeaders[METADATA_HEADER_EXTERNAL] = encodedMetadata
+	// }
+
+	// HEAD and DELETE requests are implemented directly in the Netlify API.
+	if options.Method == HTTPMethodHead || options.Method == HTTPMethodDelete {
+		return apiHeaders, url.String(), nil
+	}
+
+	req, err := http.NewRequest(string(options.Method), url.String(), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req.Header.Add("authorization", authorization)
+	req.Header.Add("accept", SIGNED_URL_ACCEPT_HEADER)
+
+	// if (encodedMetadata) {
+	//   req.Header.Add(METADATA_HEADER_EXTERNAL, encodedMetadata)
+	// }
+
+	res, err := http.DefaultTransport.RoundTrip(req)
+
+	if res.StatusCode != 200 {
+		err := NewBlobsInternalError(res)
+		return nil, "", err
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("WOOWOWOWOWO %s", string(body))
+
+	// const { url: signedURL } = await res.json()
+
+	userHeaders := make(map[string]string)
+	// if (encodedMetadata) {
+	//   result[]
+	// }
+	// const userHeaders = encodedMetadata ? { [METADATA_HEADER_INTERNAL]: encodedMetadata } : undefined
+
+	return userHeaders, url.String(), nil
 }
 
 // MakeRequest performs a request to the store.
 func (c *Client) MakeRequest(options MakeStoreRequestOptions) (*http.Response, error) {
-	// Simulate a store request
-	return nil, nil
+
+	headers, url, err := c.GetFinalRequest(GetFinalRequestOptions{
+		Consistency: options.Consistency,
+		Key:         options.Key,
+		Metadata:    options.Metadata,
+		Method:      options.Method,
+		Parameters:  options.Parameters,
+		StoreName:   options.StoreName,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range options.Headers {
+		headers[k] = v
+	}
+
+	if options.Method == HTTPMethodPut {
+		headers["cache-control"] = "max-age=0, stale-while-revalidate=60"
+	}
+
+	req, err := http.NewRequest(string(options.Method), url, options.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for k, v := range headers {
+		req.Header.Add(k, v)
+	}
+
+	return http.DefaultTransport.RoundTrip(req)
+
 }
 
 // BlobsConsistencyError represents an error related to blob consistency.
@@ -194,9 +380,41 @@ func (s *Store) Delete(key string) error {
 }
 
 // Get retrieves a value from the store.
-func (s *Store) Get(key string) (string, error) {
-	// Simulate getting the value
-	return "", nil
+func (s *Store) Get(key string) (io.ReadCloser, error) {
+	res, err := s.Client.MakeRequest(MakeStoreRequestOptions{
+		Body:        nil,
+		Consistency: &s.Client.Consistency,
+		Headers:     map[string]string{},
+		Key:         key,
+		Metadata:    map[string]interface{}{},
+		Method:      HTTPMethodGet,
+		Parameters:  map[string]string{},
+		StoreName:   s.Name,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode == 404 {
+		return nil, nil
+	}
+
+	if res.StatusCode != 200 {
+		return nil, NewBlobsInternalError(res)
+	}
+
+	return res.Body, nil
+
+	// // body, err := io.ReadAll(res.Body)
+	// // if err != nil {
+	// // 	return "", err
+	// // }
+
+	// // return string(body), nil
+
+	// // Simulate getting the value
+	// return "", nil
 }
 
 // ListOptions represents options for listing store items.
@@ -390,6 +608,17 @@ func handler(ctx context.Context, request APIGatewayProxyRequest) (*events.APIGa
 		return nil, err
 	}
 	fmt.Printf("store: %+v\n", store)
+
+	entry, err := store.Get("nails")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("entry: %+v\n", entry)
+	b, err := io.ReadAll(entry)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("b: %s\n", string(b))
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: 200,
