@@ -23,6 +23,10 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	fmt.Println("cc.Custom", cc.Custom)
 	fmt.Println("cc.Env", cc.Env)
 
+	for key, value := range cc.Custom {
+		fmt.Printf("cc.Custom.%s value is %v\n", key, value)
+	}
+
 	return &events.APIGatewayProxyResponse{
 		StatusCode: 200,
 		Body:       "Hello, " + cc.Client.AppPackageName,
