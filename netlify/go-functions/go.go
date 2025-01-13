@@ -195,12 +195,11 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 	apiHeaders := make(map[string]string)
 	authorization := fmt.Sprint("Bearer %s", c.Token)
 	apiHeaders["authorization"] = authorization
-	u, err := url.Parse(fmt.Sprint("/api/v1/blobs%s", urlPath))
+	u, err := url.Parse(fmt.Sprintf("/api/v1/blobs%s", urlPath))
 	if err != nil {
 		log.Fatal(err)
 	}
 	var base *url.URL
-	base, err = url.Parse("https://api.netlify.com")
 	if c.APIURL != "" {
 		base, err = url.Parse((c.APIURL))
 	} else {
