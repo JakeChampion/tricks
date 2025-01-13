@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -19,8 +20,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 
 	cc := lc.ClientContext
 
-	println("cc.Custom", cc.Custom)
-	println("cc.Env", cc.Env)
+	fmt.Println("cc.Custom", cc.Custom)
+	fmt.Println("cc.Env", cc.Env)
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: 200,
