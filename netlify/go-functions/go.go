@@ -31,32 +31,62 @@ type InvocationMetadata struct {
 	Generator        string `json:"generator,omitempty"`
 }
 
+// APIGatewayRequestIdentity contains identity information for the request caller.
+type APIGatewayRequestIdentity struct {
+	CognitoIdentityPoolID         string `json:"cognitoIdentityPoolId,omitempty"`
+	AccountID                     string `json:"accountId,omitempty"`
+	CognitoIdentityID             string `json:"cognitoIdentityId,omitempty"`
+	Caller                        string `json:"caller,omitempty"`
+	APIKey                        string `json:"apiKey,omitempty"`
+	APIKeyID                      string `json:"apiKeyId,omitempty"`
+	AccessKey                     string `json:"accessKey,omitempty"`
+	SourceIP                      string `json:"sourceIp"`
+	CognitoAuthenticationType     string `json:"cognitoAuthenticationType,omitempty"`
+	CognitoAuthenticationProvider string `json:"cognitoAuthenticationProvider,omitempty"`
+	UserArn                       string `json:"userArn,omitempty"` //nolint: stylecheck
+	UserAgent                     string `json:"userAgent"`
+	User                          string `json:"user,omitempty"`
+}
+
+// APIGatewayProxyRequestContext contains the information to identify the AWS account and resources invoking the
+// Lambda function. It also includes Cognito identity information for the caller.
+type APIGatewayProxyRequestContext struct {
+	AccountID         string                    `json:"accountId"`
+	ResourceID        string                    `json:"resourceId"`
+	OperationName     string                    `json:"operationName,omitempty"`
+	Stage             string                    `json:"stage"`
+	DomainName        string                    `json:"domainName"`
+	DomainPrefix      string                    `json:"domainPrefix"`
+	RequestID         string                    `json:"requestId"`
+	ExtendedRequestID string                    `json:"extendedRequestId"`
+	Protocol          string                    `json:"protocol"`
+	Identity          APIGatewayRequestIdentity `json:"identity"`
+	ResourcePath      string                    `json:"resourcePath"`
+	Path              string                    `json:"path"`
+	Authorizer        map[string]interface{}    `json:"authorizer"`
+	HTTPMethod        string                    `json:"httpMethod"`
+	RequestTime       string                    `json:"requestTime"`
+	RequestTimeEpoch  int64                     `json:"requestTimeEpoch"`
+	APIID             string                    `json:"apiId"` // The API Gateway rest API Id
+}
+
 // APIGatewayProxyRequest contains data coming from the API Gateway proxy
 type APIGatewayProxyRequest struct {
-	// Resource                        string                        `json:"resource"` // The resource path defined in API Gateway
-	// Path                            string                        `json:"path"`     // The url path for the caller
-	// HTTPMethod                      string                        `json:"httpMethod"`
-	// Headers                         map[string]string             `json:"headers"`
-	// MultiValueHeaders               map[string][]string           `json:"multiValueHeaders"`
-	// QueryStringParameters           map[string]string             `json:"queryStringParameters"`
-	// MultiValueQueryStringParameters map[string][]string           `json:"multiValueQueryStringParameters"`
-	// PathParameters                  map[string]string             `json:"pathParameters"`
-	// StageVariables                  map[string]string             `json:"stageVariables"`
-	// RequestContext                  APIGatewayProxyRequestContext `json:"requestContext"`
-	// Body                            string                        `json:"body"`
-	// IsBase64Encoded                 bool                          `json:"isBase64Encoded,omitempty"`
-	// Blobs                           string                 `json:"blobs,omitempty"`
+	Resource       string                        `json:"resource"` // The resource path defined in API Gateway
+	PathParameters map[string]string             `json:"pathParameters"`
+	StageVariables map[string]string             `json:"stageVariables"`
+	RequestContext APIGatewayProxyRequestContext `json:"requestContext"`
 
 	RawURL                          string                 `json:"rawUrl"`
 	RawQuery                        string                 `json:"rawQuery"`
 	Path                            string                 `json:"path"`
-	Method                          string                 `json:"httpMethod"`
+	HTTPMethod                      string                 `json:"httpMethod"`
 	Headers                         map[string]string      `json:"headers"`
 	MultiValueHeaders               map[string][]string    `json:"multiValueHeaders"`
-	Params                          map[string]string      `json:"queryStringParameters"`
+	QueryStringParameters           map[string]string      `json:"queryStringParameters"`
 	MultiValueQueryStringParameters map[string][]string    `json:"multiValueQueryStringParameters"`
 	Body                            string                 `json:"body"`
-	IsBase64                        bool                   `json:"isBase64Encoded"`
+	IsBase64Encoded                 bool                   `json:"isBase64Encoded"`
 	Route                           string                 `json:"route,omitempty"`
 	Blobs                           string                 `json:"blobs"`
 	Flags                           map[string]interface{} `json:"flags,omitempty"`
