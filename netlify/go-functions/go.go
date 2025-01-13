@@ -60,6 +60,9 @@ const (
 
 // SIGNED_URL_ACCEPT_HEADER is the constant for signed URL content type.
 const SIGNED_URL_ACCEPT_HEADER = "application/json;type=signed-url"
+const BASE64_PREFIX = "b64;"
+const METADATA_HEADER_INTERNAL = "x-amz-meta-user"
+const METADATA_HEADER_EXTERNAL = "netlify-blobs-metadata"
 
 // ConsistencyMode represents the consistency modes available.
 type ConsistencyMode string
@@ -151,10 +154,23 @@ type Client struct {
 	UncachedEdgeURL string
 }
 
+func encodeMetadata(metadata Metadata) (string, error) {
+	meta, err := json.Marshal(metadata)
+	if err != nil {
+		return "", err
+	}
+	encodedObject := b64.StdEncoding.EncodeToString(meta)
+	payload := fmt.Sprintf("b64;%s", encodedObject)
+
+	// if (METADATA_HEADER_EXTERNAL.length + payload.length > METADATA_MAX_SIZE) {
+	//   throw new Error('Metadata object exceeds the maximum size')
+	// }
+
+	return payload, nil
+}
+
 // GetFinalRequest prepares the final request options.
 func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]string, string, error) {
-
-	// const encodedMetadata = encodeMetadata(metadata)
 	// Consistency := options.Consistency || c.Consistency
 
 	urlPath := fmt.Sprintf("/%s", c.SiteID)
@@ -232,9 +248,13 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 		return apiHeaders, url.String(), nil
 	}
 
-	// if (encodedMetadata) {
-	//   apiHeaders[METADATA_HEADER_EXTERNAL] = encodedMetadata
-	// }
+	if options.Metadata != nil {
+		encodedMetadata, err := encodeMetadata(options.Metadata)
+		if err != nil {
+			return nil, "", err
+		}
+		apiHeaders[METADATA_HEADER_EXTERNAL] = encodedMetadata
+	}
 
 	// HEAD and DELETE requests are implemented directly in the Netlify API.
 	if options.Method == HTTPMethodHead || options.Method == HTTPMethodDelete {
@@ -249,9 +269,13 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 	req.Header.Add("Authorization", authorization)
 	req.Header.Add("Accept", SIGNED_URL_ACCEPT_HEADER)
 
-	// if (encodedMetadata) {
-	//   req.Header.Add(METADATA_HEADER_EXTERNAL, encodedMetadata)
-	// }
+	if options.Metadata != nil {
+		encodedMetadata, err := encodeMetadata(options.Metadata)
+		if err != nil {
+			return nil, "", err
+		}
+		req.Header.Add(METADATA_HEADER_EXTERNAL, encodedMetadata)
+	}
 
 	fmt.Printf("req1: %+v\n", req)
 
@@ -272,7 +296,7 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("WOOWOWOWOWO %s\n", string(body))
+	// fmt.Printf("WOOWOWOWOWO %s\n", string(body))
 
 	var signedS3Response SignedS3Response
 	err = json.Unmarshal(body, &signedS3Response)
@@ -281,13 +305,14 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 		log.Fatal(err)
 	}
 
-	// const { url: signedURL } = await res.json()
-
 	userHeaders := make(map[string]string)
-	// if (encodedMetadata) {
-	//   result[]
-	// }
-	// const userHeaders = encodedMetadata ? { [METADATA_HEADER_INTERNAL]: encodedMetadata } : undefined
+	if options.Metadata != nil {
+		encodedMetadata, err := encodeMetadata(options.Metadata)
+		if err != nil {
+			return nil, "", err
+		}
+		userHeaders[METADATA_HEADER_INTERNAL] = encodedMetadata
+	}
 
 	return userHeaders, signedS3Response.URL, nil
 }
