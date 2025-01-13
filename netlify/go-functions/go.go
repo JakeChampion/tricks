@@ -20,6 +20,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 
 	cc := lc.ClientContext
 
+	for key, value := range cc.Env {
+		fmt.Printf("cc.Env.%s value is %v\n", key, value)
+	}
+	fmt.Println("cc.Env.NETLIFY_BLOBS_CONTEXT", cc.Env["NETLIFY_BLOBS_CONTEXT"])
+
 	for key, value := range cc.Custom {
 		fmt.Printf("cc.Custom.%s value is %v\n", key, value)
 	}
