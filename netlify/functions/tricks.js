@@ -13,7 +13,7 @@ export default async (req, context) => {
     const construction = getStore("construction");
     await construction.set("nails", 9);
     const entry = await construction.get("nails")
-    return Response.json({r,getStore:getStore.toString(),set: construction.set.toString(),get: construction.get.toString()});
+    return new Response(entry);
 };
 
 export const config = {
