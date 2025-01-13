@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	b64 "encoding/base64"
 	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -84,16 +85,9 @@ func handler(ctx context.Context, request APIGatewayProxyRequest) (*events.APIGa
 	fmt.Printf("request: %+v\n", request)
 	fmt.Printf("lc: %+v\n", lc)
 
-	// deploy_id := request.Headers["x-nf-deploy-id"]
-	// api_url := "https://api.netlify.com"
-	// site_id := request.Headers["x-nf-site-id"]
-	// const payload = {
-	// apiURL: "https://api.netlify.com",
-	// deployID: reques,
-	// siteID: siteId,
-	// token,
-	// }
-	// const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64')
+	blob, _ := b64.StdEncoding.DecodeString(request.Blobs)
+
+	fmt.Println(blob)
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: 200,
