@@ -6,7 +6,3 @@ export default async (req, context) => {
     const entry = await construction.get("nails")
     return new Response(entry);
 };
-
-export const config = {
-    path: '/f'
-};
