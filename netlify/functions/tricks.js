@@ -1,14 +1,5 @@
 import { getStore } from "@netlify/blobs";
 
-let r = [];
-let i = [];
-async function f(request, init) {
-    r.push(request) 
-    i.push(init)
-    console.log({request, init})
-    return fetch(request, init)
-}
-
 export default async (req, context) => {
     const construction = getStore("construction");
     await construction.set("nails", 9);
