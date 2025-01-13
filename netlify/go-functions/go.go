@@ -48,10 +48,10 @@ type Fetcher func(url string, options *http.Request) (*http.Response, error)
 type HTTPMethod string
 
 const (
-	HTTPMethodDelete HTTPMethod = "delete"
-	HTTPMethodGet    HTTPMethod = "get"
-	HTTPMethodHead   HTTPMethod = "head"
-	HTTPMethodPut    HTTPMethod = "put"
+	HTTPMethodDelete HTTPMethod = "DELETE"
+	HTTPMethodGet    HTTPMethod = "GET"
+	HTTPMethodHead   HTTPMethod = "HEAD"
+	HTTPMethodPut    HTTPMethod = "PUT"
 )
 
 // SIGNED_URL_ACCEPT_HEADER is the constant for signed URL content type.
