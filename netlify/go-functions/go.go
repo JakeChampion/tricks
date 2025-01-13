@@ -350,6 +350,8 @@ func (c *Client) MakeRequest(options MakeStoreRequestOptions) (*http.Response, e
 		req.Header.Add(k, v)
 	}
 
+	fmt.Printf("MakeRequest: url: %s\n", url)
+
 	return http.DefaultTransport.RoundTrip(req)
 
 }
