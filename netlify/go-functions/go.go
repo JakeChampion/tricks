@@ -142,6 +142,20 @@ func NewBlobsInternalError(res *http.Response) *BlobsInternalError {
 	}
 }
 
+type BlobsConsistencyError struct {
+	Message string
+}
+
+func (e *BlobsConsistencyError) Error() string {
+	return e.Message
+}
+
+func NewBlobsConsistencyError() *BlobsConsistencyError {
+	return &BlobsConsistencyError{
+		Message: "Netlify Blobs has failed to perform a read using strong consistency because the environment has not been configured with a 'uncachedEdgeURL' property",
+	}
+}
+
 // Client represents the client to interact with the API.
 type Client struct {
 	APIURL          string
@@ -171,7 +185,11 @@ func encodeMetadata(metadata Metadata) (string, error) {
 
 // GetFinalRequest prepares the final request options.
 func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]string, string, error) {
-	// Consistency := options.Consistency || c.Consistency
+	Consistency := c.Consistency
+
+	if options.Consistency != nil {
+		Consistency = *options.Consistency
+	}
 
 	urlPath := fmt.Sprintf("/%s", c.SiteID)
 
@@ -183,34 +201,56 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 		urlPath += fmt.Sprintf("/%s", options.Key)
 	}
 
-	// if (this.edgeURL) {
-	//   if (consistency === 'strong' && !this.uncachedEdgeURL) {
-	//     throw new BlobsConsistencyError()
-	//   }
+	if c.EdgeURL != "" {
+		if Consistency == ConsistencyModeStrong && c.UncachedEdgeURL == "" {
+			return nil, "", NewBlobsConsistencyError()
+		}
 
-	//   const headers: Record<string, string> = {
-	//     authorization: `Bearer ${this.token}`,
-	//   }
+		headers := make(map[string]string)
+		authorization := fmt.Sprintf("Bearer %s", c.Token)
+		headers["authorization"] = authorization
 
-	//   if (encodedMetadata) {
-	//     headers[METADATA_HEADER_INTERNAL] = encodedMetadata
-	//   }
+		if options.Metadata != nil {
+			encodedMetadata, err := encodeMetadata(options.Metadata)
+			if err != nil {
+				return nil, "", err
+			}
+			headers[METADATA_HEADER_INTERNAL] = encodedMetadata
+		}
 
-	//   if (this.region) {
-	//     urlPath = `/region:${this.region}${urlPath}`
-	//   }
+		if c.Region != "" {
+			urlPath = fmt.Sprintf("/region:%s%s", c.Region, urlPath)
+		}
 
-	//   const url = new URL(urlPath, consistency === 'strong' ? this.uncachedEdgeURL : this.edgeURL)
+		//   const url = new URL(urlPath, consistency === 'strong' ? this.uncachedEdgeURL : this.edgeURL)
 
-	//   for (const key in parameters) {
-	//     url.searchParams.set(key, parameters[key])
-	//   }
+		//   for (const key in parameters) {
+		//     url.searchParams.set(key, parameters[key])
+		//   }
 
-	//   return {
-	//     headers,
-	//     url: url.toString(),
-	//   }
-	// }
+		u, err := url.Parse(urlPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		var base *url.URL
+		if Consistency == ConsistencyModeStrong {
+			base, err = url.Parse(c.UncachedEdgeURL)
+		} else {
+			base, err = url.Parse(c.EdgeURL)
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		url := base.ResolveReference(u)
+
+		q := url.Query()
+
+		for key, value := range options.Parameters {
+			q.Add(key, value)
+		}
+
+		return headers, url.String(), nil
+	}
 
 	apiHeaders := make(map[string]string)
 	authorization := fmt.Sprintf("Bearer %s", c.Token)
@@ -221,7 +261,7 @@ func (c *Client) GetFinalRequest(options GetFinalRequestOptions) (map[string]str
 	}
 	var base *url.URL
 	if c.APIURL != "" {
-		base, err = url.Parse((c.APIURL))
+		base, err = url.Parse(c.APIURL)
 	} else {
 		base, err = url.Parse("https://api.netlify.com")
 	}
@@ -357,16 +397,16 @@ func (c *Client) MakeRequest(options MakeStoreRequestOptions) (*http.Response, e
 }
 
 // BlobsConsistencyError represents an error related to blob consistency.
-type BlobsConsistencyError struct {
-	Message string
-}
+// type BlobsConsistencyError struct {
+// 	Message string
+// }
 
-// NewBlobsConsistencyError creates a new BlobsConsistencyError.
-func NewBlobsConsistencyError() *BlobsConsistencyError {
-	return &BlobsConsistencyError{
-		Message: "Blob consistency error",
-	}
-}
+// // NewBlobsConsistencyError creates a new BlobsConsistencyError.
+// func NewBlobsConsistencyError() *BlobsConsistencyError {
+// 	return &BlobsConsistencyError{
+// 		Message: "Blob consistency error",
+// 	}
+// }
 
 // Constants for store prefixes.
 const (
@@ -473,16 +513,16 @@ func (s *Store) List(options *ListOptions) (*ListResult, error) {
 
 func validateKey(key string) error {
 	if key == "" {
-		return fmt.Errorf("Blob key must not be empty.")
+		return fmt.Errorf("key must not be empty")
 	}
 
 	if strings.HasPrefix(key, "/") || strings.HasPrefix(key, "%2F") {
-		return fmt.Errorf("Blob key must not start with forward slash (/).")
+		return fmt.Errorf("key must not start with forward slash (/)")
 	}
 
 	if len(key) > 600 {
 		return fmt.Errorf(
-			"Blob key must be a sequence of Unicode characters whose UTF-8 encoding is at most 600 bytes long.",
+			"key must be a sequence of Unicode characters whose UTF-8 encoding is at most 600 bytes long",
 		)
 	}
 	return nil
