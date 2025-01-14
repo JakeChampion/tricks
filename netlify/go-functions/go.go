@@ -450,16 +450,6 @@ func (s *Store) Get(key string) (io.ReadCloser, error) {
 	}
 
 	return res.Body, nil
-
-	// // body, err := io.ReadAll(res.Body)
-	// // if err != nil {
-	// // 	return "", err
-	// // }
-
-	// // return string(body), nil
-
-	// // Simulate getting the value
-	// return "", nil
 }
 
 // ListOptions represents options for listing store items.
@@ -481,9 +471,50 @@ func (s *Store) List(options *ListOptions) (*ListResult, error) {
 	return &ListResult{}, nil
 }
 
+func validateKey(key string) error {
+	if key == "" {
+		return fmt.Errorf("Blob key must not be empty.")
+	}
+
+	if strings.HasPrefix(key, "/") || strings.HasPrefix(key, "%2F") {
+		return fmt.Errorf("Blob key must not start with forward slash (/).")
+	}
+
+	if len(key) > 600 {
+		return fmt.Errorf(
+			"Blob key must be a sequence of Unicode characters whose UTF-8 encoding is at most 600 bytes long.",
+		)
+	}
+	return nil
+}
+
 // Set stores data in the store.
 func (s *Store) Set(key string, data BlobInput, options *SetOptions) error {
-	// Simulate storing the data
+
+	err := validateKey(key)
+	if err != nil {
+		return err
+	}
+
+	res, err := s.Client.MakeRequest(MakeStoreRequestOptions{
+		Body:        data,
+		Key:         key,
+		Metadata:    options.Metadata,
+		Method:      HTTPMethodPut,
+		StoreName:   s.Name,
+		Consistency: &s.Client.Consistency,
+		Headers:     map[string]string{},
+		Parameters:  map[string]string{},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != 200 {
+		return NewBlobsInternalError(res)
+	}
+
 	return nil
 }
 
@@ -586,17 +617,6 @@ type APIGatewayProxyRequest struct {
 	LogIngestionToken               string                 `json:"logToken,omitempty"`
 }
 
-// getStore: {
-// 	(name: string): Store
-// 	(options: GetStoreOptions): Store
-//   } = (input) => {
-// 	if (typeof input === 'string') {
-// 	  const clientOptions = getClientOptions({})
-// 	  const client = new Client(clientOptions)
-
-// 	  return new Store({ client, name: input })
-// 	}
-
 // func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 func handler(ctx context.Context, request APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	lc, ok := lambdacontext.FromContext(ctx)
@@ -653,6 +673,16 @@ func handler(ctx context.Context, request APIGatewayProxyRequest) (*events.APIGa
 		return nil, err
 	}
 	fmt.Printf("store: %+v\n", store)
+
+	someString := "hello world\nand hello go and more"
+	myReader := strings.NewReader(someString)
+	err = store.Set("nails", myReader, &SetOptions{
+		Metadata: map[string]interface{}{},
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	entry, err := store.Get("nails")
 	if err != nil {
